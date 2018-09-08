@@ -1,0 +1,153 @@
+#!/bin/bash
+#* ************************************************************************** */
+#*                                                                            */
+#*                                                        :::      ::::::::   */
+#*   configure                                          :+:      :+:    :+:   */
+#*                                                    +:+ +:+         +:+     */
+#*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
+#*                                                +#+#+#+#+#+   +#+           */
+#*   Created: 2018/06/05 18:34:57 by jkrause           #+#    #+#             */
+#*   Updated: 2018/06/05 18:34:57 by jkrause          ###   ########.fr       */
+#*                                                                            */
+#* ************************************************************************** */
+
+# ------------------------- Version 1.0 (MF: 1.7) --------------------------- #
+
+echo "[*] Makefile v1.7 Configuration Tool";
+
+if [ "$(echo $1)" = "-help" ];  then
+	echo "[!] Usage: $0 [--lite|--correction|--libft|--debug]";
+	exit 255;
+fi
+
+
+ARG=$@;
+
+argv_check() {
+	if [ "$(echo $ARG | grep -oE '\-\-'$1 2>/dev/null)" = "--"$1 ]; then
+		echo "1";
+		return 1;
+	fi
+	echo "0";
+}
+
+conf()
+{
+	cat Makefile.m4 | \
+	sed -Ee 's/define\(MK_LIBFT_BUILD,[ 0-9]+/define\(MK_LIBFT_BUILD, '$(argv_check "libft")'/g' | \
+	sed -Ee 's/define\(MK_CORRECTION,[ 0-9]+/define\(MK_CORRECTION, '$(argv_check "correction")'/g' | \
+	sed -Ee 's/define\(MK_DEBUG,[ 0-9]+/define\(MK_DEBUG, '$(argv_check "debug")'/g';
+}
+
+fail() {
+	echo "[!] Cannot compile!";
+	exit 255;
+}
+
+nop() {
+	return 0;
+}
+
+build()
+{
+	m4 > Makefile;
+}
+
+if [ "$(argv_check 'correction')" = "0" ] && [ "$(cat Makefile | grep '_CORRECTION')" != "" ]; then
+	if [ "$(argv_check 'yesimsure')" != "1" ]; then
+		echo "[!] Correction mode is enabled.  Either pass --correction or to disable it: --yesimsure to disable this mode.";
+		exit 255;
+	fi
+elif [ "$(argv_check 'correction')" = "1" ]; then
+	echo "[*] Correction mode is now enabled.";
+fi
+
+echo "[*] Forcibly cleaning up old stuff.."
+find . -type f -name "*.o" -delete
+make fclean
+
+if [ "$(echo $@ | grep -oE '\-\-lite' 2>/dev/null)" = "--lite" ]; then
+	echo "[*] Preprocessing & Minifying Makefile...";
+	INIT=0;
+	LIBFT_HOTCACHE=0;
+	if [ ! -d libft-min ]; then
+		INIT=1;
+		echo "[*] Building without libft...";
+		conf | \
+			sed -Ee 's/define\(MK_LIBFT_BUILD,[ 0-9]+/define\(MK_LIBFT_BUILD, 0/g' | \
+			build;
+		make 2>/dev/null 1>&2;
+	fi
+	[ -f symbols.txt ] && rm -f symbols.txt;
+	while true; do
+		if [ $INIT -eq 0 ]; then
+			echo "[*] Using old libft-min directory to see if there is any more missing symbols."
+			conf | \
+				sed -Ee 's/define\(MK_LIBFT_BUILD,[ 0-9]+/define\(MK_LIBFT_BUILD, 0/g' | \
+				sed -Ee 's/define\(MK_LITE,[ 0-9]+/define\(MK_LITE, 1/g' | \
+				build;
+			make && exit 0;
+			INIT=1;
+		fi
+		[ ! -d libft-min ] && mkdir libft-min;
+		echo "[*] Finding missing symbols...";
+		find . -type f -name '*.o' -not -path libft -exec nm -u {} + | grep -oE "^_.+" | uniq > symbols.txt;
+		cat symbols.txt | uniq > tmp;
+		mv tmp symbols.txt;
+		if [ $LIBFT_HOTCACHE -eq 0 ]; then
+			LIBFT_HOTCACHE=1;
+
+			echo "[*] Building libft hot cache...";
+			make fclean 2>/dev/null 1>&2;
+			conf | \
+				sed -Ee 's/define\(MK_LIBFT_BUILD,[ 0-9]+/define\(MK_LIBFT_BUILD, 1/g' | \
+				build;
+			make 1>/dev/null || fail;
+			[ -d libft-hot-cache ] && rm -rf libft-hot-cache;
+			mkdir libft-hot-cache;
+			find libft -type f -name "*.o" -exec cp {} libft-hot-cache \;
+			find libft -type f -name "*.c" -exec cp {} libft-hot-cache \;
+		fi
+		echo "[*] Searching for symbols...";
+		for i in $(cat symbols.txt | grep -vE "_malloc|_free"); do
+			E=$(echo $i | cut -c 2-);
+			P="";
+			# Fastpath to filename first.
+			if [ -f libft-hot-cache/$E.o ]; then
+				VERIFY=$(nm -U libft-hot-cache/$E.o | grep -E "T $i");
+				if [ "$VERIFY" != "" ]; then
+					P="libft-hot-cache/$E.c";
+				fi
+			fi
+			if [ "$P" = "" ]; then
+				for g in $(find libft-hot-cache -type f -name "*.o"); do
+					NM=$(nm -U $g | grep -E "T $i");
+					if [ "$NM" != "" ]; then
+						P=$(echo $g | sed -e 's/\.o/.c/g');
+						break;
+					fi
+				done
+			fi
+			if [ "$P" != "" ]; then
+				[ -f "libft-min/$(basename -- $P)" ] && continue;
+				echo "[-] $E -> $P";
+				cp $P libft-min;
+			fi
+		done
+		echo "[*] Building & Testing finalized Makefile...";
+		make fclean 2>/dev/null 1>&2;
+		conf | \
+			sed -Ee 's/define\(MK_LIBFT_BUILD,[ 0-9]+/define\(MK_LIBFT_BUILD, 0/g' | \
+			sed -Ee 's/define\(MK_LITE,[ 0-9]+/define\(MK_LITE, 1/g' | \
+			build;
+		make && break || echo "[*] Failed to compile, looping.";
+	done
+	echo "[*] Cleaning up...";
+	rm -rf libft-hot-cache;
+	[ -f symbols.txt ] && rm -f symbols.txt;
+	exit 0;
+else
+	echo "[*] Preprocessing Makefile...";
+	conf | sed -Ee 's/define\(MK_LIBFT_BUILD,[ 0-9]+/define\(MK_LIBFT_BUILD, 1/g' | \
+		build;
+fi
