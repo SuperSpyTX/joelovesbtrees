@@ -43,7 +43,7 @@ define(MK_RBTREE_AUTO_INCLUDE_DIR, -I patsubst(MK_RBTREE_INCLUDE_DIRS,` ',``` -I
 divert(0)
 # ------------- Automated Configuration ------------- #
 LFLAGS = ifelse(MK_SUFFIX, ".dylib", -dynamiclib, ifelse(MK_SUFFIX, ".so", -shared,))
-CFLAGS = ifelse(MK_DEBUG, 1,-g -DDEBUG=1) -fPIC -Wall -Werror -Wextra ifelse(MK_CORRECTION,1, -DCORRECTION=1)
+CFLAGS = ifelse(MK_DEBUG, 1,-g -DDEBUG=1) ifelse(MK_LITE, 1, ifelse(MK_DEBUG, 0, -O1)) -fPIC -Wall -Werror -Wextra ifelse(MK_CORRECTION,1, -DCORRECTION=1)
 RBTREE_NAME = defn(`MK_RBTREE_NAME')MK_RBTREE_SUFFIX
 CFLAGS += MK_RBTREE_AUTO_INCLUDE_DIR
 RBTREE_SRC = MK_RBTREE_AUTO_SRC
