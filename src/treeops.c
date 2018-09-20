@@ -5,53 +5,76 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/08/08 16:51:24 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/08 10:59:20 by jkrause          ###   ########.fr       */
+/*   Created: 2018/09/11 09:12:10 by jkrause           #+#    #+#             */
+/*   Updated: 2018/09/20 09:54:37 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "rbtree.h"
 
+/*
+** TODO: Change this code to use pointer references
+** from an array.
+*/
+
+/*
+** We want to not actually call malloc() here, but for
+** demonstration purposes we will simply do it here.
+**
+** This would normally come from the array.
+*/
+
+t_node			*rb_initialize(t_node *parent, int value)
+{
+	t_node		*node;
+
+	node = (t_node*)malloc(sizeof(t_node));
+	node->red = 1;
+	node->value = value;
+	node->parent = parent;
+	node->children[0] = 0;
+	node->children[1] = 0;
+	return (node);
+}
+
 void			rb_invert(t_node *n)
 {
+	t_node		*p;
+
+	p = n->parent;
+	ft_printf("Invert (%d, p: %d)\n", n->value, (p ? p->value : -1));
 	n->red = !n->red;
 	(n->children[0] ? n->children[0]->red = !n->red : (void)n);
 	(n->children[1] ? n->children[1]->red = !n->red : (void)n);
+	//ft_printf("%d is now %d p: %d\n", n->value, n->red, (n->parent ? n->parent->value : -1));
 	g_root->red = 0;
+	//print_buds(g_root, -1);
 }
 
-t_node			*rb_insert(t_node *root, int value, int dummy)
+/*
+** Searches the rbtree for a particular node, where duplicates are allowed.
+** Only the latest duplicate will resolve for now.
+** I should write a function that would allow skipping of N duplicates
+** before returning the node.
+*/
+
+t_node			*rb_search(t_node *root, int value)
 {
 	t_node		*cur;
 
 	cur = root;
-	(void)dummy;
 	while (cur)
 	{
-		/*if (IS_RED(CHILD(cur, 0)) == 1 && IS_RED(CHILD(cur, 1)) == 1)
-			rb_invert(cur);
-		if (IS_RED(P(cur)) && IS_RED(cur))
-		{
-			(GETCHILD(cur) != GETCHILD(P(cur)) ? rb_rotate(P(cur),
-				GETCHILD(P(cur)), 0) : (void)0);
-			rb_rotate(P(cur), GETCHILD(cur), 1);
-		}*/
-		if (cur->children[(cur->value < value)])
-			cur = cur->children[(cur->value < value)];
-		else
-		{
-			cur->children[(cur->value < value)] =
-				rb_initialize(cur, value);
-			cur = cur->children[(cur->value < value)];
-			rb_fix_tree(cur);
-			return (cur);
-		}
+		ft_printf("rb_search: Current value: %d (%d)\n", cur->value, value);
+		if (cur->value == value)
+			break ;
+		cur = cur->children[(cur->value <= value)];
 	}
-	return (rb_initialize(0, value));
+	return (cur);
 }
 
 /*
-** Trying a fail safe solution to no saved children.
+** Another yet working solution.
 */
 
 t_node			*rb_rotate(t_node *q, int dir, int setcolors)
@@ -59,13 +82,14 @@ t_node			*rb_rotate(t_node *q, int dir, int setcolors)
 	t_node		*p;
 	t_node		*odir;
 
-	if (dir < 0 || dir > 1)
-		abort();
-	if (!q || (q->children[0] == 0 && q->children[1] == 0))
-		return (0);
-	ft_printf("Rotate at (%d, p: %d -> %d)\n", q->value, (q->parent ? q->parent->value : -1), dir);
 	p = q->parent;
 	odir = q->children[!dir];
+	ft_printf("(%d)Rotate (%d, p: %d o: %d -> %d)\n", setcolors,
+			q->value, (p ? p->value : -1), (odir ? odir->value : -1), dir);
+	if (!odir)
+	{
+		AB("Opposite direction is null: Wrong rotation!");
+	}
 	q->children[!dir] = odir->children[dir];
 	if (odir->children[dir])
 		odir->children[dir]->parent = q;
@@ -76,49 +100,59 @@ t_node			*rb_rotate(t_node *q, int dir, int setcolors)
 	q->parent = odir;
 	if (setcolors)
 	{
-		q->red = !q->red;
-		odir->red = !q->red;
+		q->red = 1;
+		q->parent->red = 0;
 	}
 	if (p == 0)
 	{
-		ft_printf("New root!\n");
 		g_root = odir;
 		g_root->red = 0;
 	}
+	print_buds(g_root, -1);
 	return (odir);
 }
 
 /*
-** TODO: move these to a different file.
-** 8-14-18: Broken test cases:
-** 1 5 2 4 3 3 2 4 5 1 (5)
-**
-** Case 2:
-** 2 1 3 4 2 1 4 5 6 2 3 4 5 1 2 3 2 3 4 12 4 6 5436 5 4 36 54 36 5 4 3 453 54 325 4 325 4 32 5 43 25 43 25 43 25 4
-** 3 25 43 25 4 325 4 32 5 43 2 3 4
+** This actually removes the node.
 */
 
-void			rb_fix_tree(t_node *q)
+t_node			*rb_swallow(t_node *n)
 {
-	t_node		*p;
-	t_node		*g;
+	t_node		*child;
 
-	if (!q)
-		return ;
-	p = q->parent;
-	ft_printf("q: %d p: %d\n", q->value, (p ? p->value : 0));
-	g = (p ? p->parent : 0);
-	if (CBOTHRED(q) && q->red == 0)
+	if (n->children[0] != 0 && n->children[1] != 0)
+		return (0);
+	if (n->children[0] == 0 && n->children[1] == 0)
 	{
-		rb_invert(q);
-	}
-	if (g && p && BOTHRED(q, p))
-	{
-		if (GETCHILD(q) != GETCHILD(p))
+		ft_printf("Both children are null.\n");
+		if (g_root == n)
 		{
-			p = rb_rotate(p, !GETCHILD(q), 0);
+			ft_printf("Tree has been fully deconstructed.\n");
+			g_root = 0;
 		}
-		return (rb_fix_tree(rb_rotate(g, !GETCHILD(p), 1)));
+		if (n->parent)
+			n->parent->children[GETCHILD(n)] = 0;
+		(n->red == 1 ? n->parent->red = 2 : (void)0);
+		((child = n->parent) ? free(n) : free(n));
+		print_buds(g_root, -1);
+		return (child);
 	}
-	return (rb_fix_tree(q->parent));
+	ft_printf("Finding non null child.\n");
+	child = n->children[CHILD(n, 0) == 0];
+	if (n->parent)
+	{
+		(child->red == 1 ? child->red = 2 : (void)0);
+		ft_printf("It's parent exists.\n");
+		n->parent->children[GETCHILD(n)] = child;
+	}
+	child->parent = n->parent;
+	if (!child->parent)
+	{
+		ft_printf("New root!\n");
+		g_root = child;
+		g_root->red = 0;
+	}
+	free(n);
+	print_buds(g_root, -1);
+	return (child);
 }

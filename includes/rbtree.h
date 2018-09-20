@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/08 15:41:07 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/08 10:05:38 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/09/20 13:29:36 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,24 @@ typedef struct			s_node
 t_node					*g_root;
 
 t_node					*rb_initialize(t_node *parent, int value);
-t_node					*rb_insert(t_node *root, int value, int dummy);
+t_node					*rb_insert(t_node *root, int value);
+
+t_node					*rb_search(t_node *root, int value);
+
+/*
+** TODO: Fix name
+*/
+t_node					*rb_swallow(t_node *n);
+
 void					rb_invert(t_node *node);
-void					rb_fix_tree(t_node *node);
+
+void					rb_fix_insert_recurs(t_node *node);
+void					rb_fix_insert(t_node *node);
+
+void					rb_fix_rebalance(t_node *n, int dir);
+
+void					rb_remove(t_node *q);
+
 int						rb_assert(t_node *n);
 
 t_node					*rb_rotate(t_node *n, int dir, int setcolors);
@@ -47,6 +62,12 @@ t_node					*rb_rotate(t_node *n, int dir, int setcolors);
 */
 
 void					print_buds(t_node *root, int w);
+
+/*
+** Optimizations
+*/
+
+# define BOOST_42_CANCER 1
 
 /*
 ** "helper functions"
@@ -87,11 +108,13 @@ void					print_buds(t_node *root, int w);
 */
 
 # define BOTHSAME(n1, n2) (n1->red == n2->red)
-# define CS1(n) BOTHSAME(CHILD(n, 0), CHILD(n, 1))
-# define CS0(n) (CHILD(n, 0) == 0 ? 0 : CHILD(n, 1) == 0 ? 0 : CS1(n))
-# define CHILDSAME(n) CS0(n)
 
+# define CCHILD(n, c, v) (CHILD(n, c) != 0 && CHILD(n, c)->red == v)
+
+# define BOTHBLK(n1, n2) (BOTHSAME(n1,n2) && n1->red == 0)
 # define BOTHRED(n1, n2) (BOTHSAME(n1,n2) && n1->red == 1)
-# define CBOTHRED(n) CHILDSAME(n) && CHILD(n, 0) != 0 && CHILD(n, 0)->red == 1
+# define CBOTHRED(n) (CCHILD(n, 0, 1) && CCHILD(n, 1, 1))
+# define CB0(n) (CHILD(n, 0) == 0 && CHILD(n, 1) == 0)
+# define CBOTHBLK(n) (CCHILD(n, 0, 0) && CCHILD(n, 1, 0) || CB0(n))
 
 #endif
