@@ -11,8 +11,9 @@
 /* ************************************************************************** */
 
 #include "ft_printf.h"
+#define MAX 1024
 
-char				g_buffer[40];
+char				g_buffer[MAX];
 size_t				g_buffersize;
 
 void				bufferwrite_module_write(t_input *input, char *str)
@@ -23,14 +24,14 @@ void				bufferwrite_module_write(t_input *input, char *str)
 	size = (size_t)input;
 	if (size < 1)
 		return ;
-	if (g_buffersize < 1 || g_buffersize >= 40)
+	if (g_buffersize < 1 || g_buffersize >= MAX)
 		g_buffersize = 0;
 	iters = 0;
-	while ((40 - g_buffersize) < size)
+	while ((MAX - g_buffersize) < size)
 	{
-		ft_memcpy(g_buffer + g_buffersize, str, ((40 - g_buffersize)));
+		ft_memcpy(g_buffer + g_buffersize, str, ((MAX - g_buffersize)));
 		iters++;
-		write(1, g_buffer, 40);
+		write(1, g_buffer, MAX);
 		size -= ((40 - g_buffersize));
 		str += ((40 - g_buffersize));
 		g_buffersize = 0;
@@ -51,7 +52,7 @@ int					bufferwrite_module_flush(t_input *input, void *nil)
 	(void)input;
 	if ((int)nil == -2)
 		return (g_buffersize);
-	if (g_buffersize >= 40)
+	if (g_buffersize >= MAX)
 		g_buffersize = 0;
 	if ((int)nil != -1)
 		write(1, g_buffer, g_buffersize);
