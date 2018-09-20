@@ -6,12 +6,16 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/09 13:12:36 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/13 15:04:37 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/09/20 16:13:50 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "rbtree.h"
 #define FAIL2(n,a,b) FAIL(ft_sprintf("%s (%d != %d)",n,a,b))
+
+/*
+** exclude file: @norminette
+*/
 
 /*
 ** C can be pretty lame sometimes, since macros can't be
