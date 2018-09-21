@@ -18,7 +18,6 @@ RBTREE_NAME = rbtree
 CFLAGS += -I includes
 RBTREE_SRC = src/treeops.c \
 src/assert.c \
-src/algorithm.c \
 src/rb_remove.c \
 src/main.c \
 src/rb_insert.c \

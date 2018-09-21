@@ -43,23 +43,25 @@ void			rb_fix_insert(t_node *n)
 	t_node		*p;
 	t_node		*g;
 	t_node		*q;
-	char		t;
 
-	if (!n)
+	if (!(q = n))
 		return ;
-	q = n;
-	t = 0;
 	while (q)
 	{
+		ft_printf("Fixing insert on node %d\n", q->value);
 		p = q->parent;
 		g = (p ? p->parent : 0);
 		if (g && CBOTHRED(g))
-			rb_invert(((t = 0)) ? g : g);
+		{
+			ft_printf("Grandparent children are both red.  Inverting grandparent.\n");
+			rb_invert(g);
+		}
 		if (p && BOTHRED(q, p))
 		{
+			ft_printf("Red violation at p %d & q %d\n", p->value, q->value);
 			if ((GETCHILD(q) != GETCHILD(p)))
 				p = rb_rotate(p, !GETCHILD(q), 0);
-			rb_rotate((g ? g : p), (!(t = 0) ? !GETCHILD(p) : -1), 1);
+			rb_rotate((g ? g : p), !GETCHILD(p), 1);
 			break ;
 		}
 		q = p;
