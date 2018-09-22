@@ -55,6 +55,7 @@ void			rb_fix_insert(t_node *n)
 		{
 			ft_printf("Grandparent children are both red.  Inverting grandparent.\n");
 			rb_invert(g);
+			g = g->parent;
 		}
 		if (p && BOTHRED(q, p))
 		{
@@ -64,6 +65,6 @@ void			rb_fix_insert(t_node *n)
 			rb_rotate((g ? g : p), !GETCHILD(p), 1);
 			break ;
 		}
-		q = p;
+		q = (g && g->red == 0 ? 0 : p);
 	}
 }
