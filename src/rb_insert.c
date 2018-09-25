@@ -28,6 +28,8 @@ t_node			*rb_insert(t_node *root, int value)
 			cur = cur->children[(cur->value <= value)];
 			if (cur->parent->red == 1)
 				rb_fix_insert(cur);
+			else
+				ft_printf("No need to fix node.\n");
 			return (cur);
 		}
 	}
@@ -61,7 +63,7 @@ void			rb_fix_insert(t_node *n)
 		{
 			ft_printf("Red violation at p %d & q %d\n", p->value, q->value);
 			if ((GETCHILD(q) != GETCHILD(p)))
-				p = rb_rotate(p, !GETCHILD(q), 0);
+				p = rb_rotate(p, !GETCHILD(q), 1);
 			rb_rotate((g ? g : p), !GETCHILD(p), 1);
 			break ;
 		}
