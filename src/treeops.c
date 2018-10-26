@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/11 09:12:10 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/20 09:54:37 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 19:31:23 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,16 +75,23 @@ t_node			*rb_search(t_node *root, int value)
 
 /*
 ** Another yet working solution.
+** This returns the node that was previously
+** the opposite direction of the node being
+** rotated.
+**
+** eg, 4 (parent)
+**      \
+**       2 (the node returned)
 */
 
-t_node			*rb_rotate(t_node *q, int dir, int setcolors)
+t_node			*rb_rotate(t_node *q, int dir)
 {
 	t_node		*p;
 	t_node		*odir;
 
 	p = q->parent;
 	odir = q->children[!dir];
-	ft_printf("(%d)Rotate (%d, p: %d o: %d -> %d)\n", setcolors,
+	ft_printf("Rotate (%d, p: %d o: %d -> %d)\n",
 			q->value, (p ? p->value : -1), (odir ? odir->value : -1), dir);
 	if (!odir)
 	{
@@ -98,11 +105,6 @@ t_node			*rb_rotate(t_node *q, int dir, int setcolors)
 		p->children[GETCHILD(q)] = odir;
 	odir->parent = p;
 	q->parent = odir;
-	if (setcolors)
-	{
-		q->red = 1;
-		q->parent->red = 0;
-	}
 	if (p == 0)
 	{
 		g_root = odir;
@@ -132,7 +134,7 @@ t_node			*rb_swallow(t_node *n)
 		}
 		if (n->parent)
 			n->parent->children[GETCHILD(n)] = 0;
-		(n->red == 1 ? n->parent->red = 2 : (void)0);
+		(n->parent && IS_RED(n) ? n->parent->red = 2 : (void)0);
 		((child = n->parent) ? free(n) : free(n));
 		print_buds(g_root, -1);
 		return (child);
@@ -141,7 +143,6 @@ t_node			*rb_swallow(t_node *n)
 	child = n->children[CHILD(n, 0) == 0];
 	if (n->parent)
 	{
-		(child->red == 1 ? child->red = 2 : (void)0);
 		ft_printf("It's parent exists.\n");
 		n->parent->children[GETCHILD(n)] = child;
 	}
@@ -152,6 +153,7 @@ t_node			*rb_swallow(t_node *n)
 		g_root = child;
 		g_root->red = 0;
 	}
+	(child && IS_RED(n) ? child->red = 2 : (void)0);
 	free(n);
 	print_buds(g_root, -1);
 	return (child);

@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/08 16:51:24 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/19 14:23:46 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 17:53:28 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,25 +48,29 @@ void			rb_fix_insert(t_node *n)
 
 	if (!(q = n))
 		return ;
-	while (q)
+	q = n;
+	while (q && IS_RED(q->parent) && IS_RED(q))
 	{
 		ft_printf("Fixing insert on node %d\n", q->value);
 		p = q->parent;
-		g = (p ? p->parent : 0);
-		if (g && CBOTHRED(g))
+		g = p->parent;
+		ft_printf("Autism Check: %d\n", IS_RED(CHILD(g, !DIR(p))));
+		ft_printf("Autism Check Old: %d\n", CBOTHRED(g));
+		if (IS_RED(CHILD(g, !DIR(p))))
 		{
 			ft_printf("Grandparent children are both red.  Inverting grandparent.\n");
 			rb_invert(g);
-			g = g->parent;
+			q = g;
+			continue ;
 		}
-		if (p && BOTHRED(q, p))
+		else
 		{
 			ft_printf("Red violation at p %d & q %d\n", p->value, q->value);
-			if ((GETCHILD(q) != GETCHILD(p)))
-				p = rb_rotate(p, !GETCHILD(q), 1);
-			rb_rotate((g ? g : p), !GETCHILD(p), 1);
+			if (DIR(q) != DIR(p))
+				rb_rotate(p, !DIR(q));
+			//rb_rotate(g, !DIR(p));
+			SETBLKRED(rb_rotate(g, !DIR(p)), g);
 			break ;
 		}
-		q = (g && g->red == 0 ? 0 : p);
 	}
 }

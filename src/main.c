@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/13 11:43:55 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/20 15:34:15 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 18:46:19 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #define RUN_ASSINSERT 1
 #define RUN_LARGEINSERT 0
 #define RUN_VIZDEBUG 0
+#define RUN_REINSERT 0
 #define RUN_NEGATIVES 1
 
 /*
@@ -87,25 +88,42 @@ void			tests(char **argv, int argc)
 	max = (getenv("DELETE_SIZE") ? ft_atoi(getenv("DELETE_SIZE")) : 0);
 	(max != 0 ? ft_printf("Really silly removal test incoming...\n") : (void)0);
 	i = (max < 0 ? (max * -1) : 0);
-	max = (max < 0 ? (max * -1) + 1 : max);
+	max = (max < 0 ? (max * -1) + 1 : (max == 0 ? 0 : max + 1));
+	(void)argc;
 	for (; i < max; i++)
 	{
+		if (i == 0)
+			i++;
 		if (!g_root || CB0(g_root))
 		{
 			// Oh dear.
 			ft_printf("Not enough nodes to be monika'd! Returning.\n");
 			return ;
 		}
-		if (i + 1 < argc && (n = rb_search(g_root, ft_atoi(argv[i + 1]))))
+		ft_printf("%d %d\n", i, ft_atoi(argv[i]));
+		if ((n = rb_search(g_root, ft_atoi(argv[i]))))
 		{
-			ft_printf("Found node %d, removing.\n\n", i);
+			ft_printf("Found node %d, removing.\n\n", ft_atoi(argv[i]));
 			rb_remove(n);
+			for (int a = 0; a < RUN_REINSERT; a++)
+			{
+				ft_printf("Reinserting...\n");
+				rb_insert(g_root, ft_atoi(argv[i]));
+				ft_printf("Removing...\n");
+				rb_remove((n = rb_search(g_root, ft_atoi(argv[i]))));
+			}
+
 		}
 		/*
 		if ((n = rb_search(g_root, i * -1)))
 		{
 			ft_printf("Found n node %d, removing.\n\n", i * -1);
 			rb_remove(n);
+			for (int a = 0; a < RUN_REINSERT; a++)
+			{
+				rb_insert(g_root, i * -1);
+				rb_remove((n = rb_search(g_root, i * -1)));
+			}
 		}*/
 		if (g_root)
 		{
