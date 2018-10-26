@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/08 15:41:07 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/20 13:29:36 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 15:08:43 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,19 +55,13 @@ void					rb_remove(t_node *q);
 
 int						rb_assert(t_node *n);
 
-t_node					*rb_rotate(t_node *n, int dir, int setcolors);
+t_node					*rb_rotate(t_node *n, int dir);
 
 /*
 ** Temporary
 */
 
 void					print_buds(t_node *root, int w);
-
-/*
-** Optimizations
-*/
-
-# define BOOST_42_CANCER 1
 
 /*
 ** "helper functions"
@@ -99,6 +93,8 @@ void					print_buds(t_node *root, int w);
 # define D1(n) UNCLEDIR(n, GETCHILD(n->parent))
 # define D0(n) (n->parent == 0 ? 0 : n->parent->parent == 0 ? 0 : D1(n))
 # define UNCLE(n) D0(n)
+
+# define SETBLKRED(b, r) b->red = 0; r->red = 1;
 
 # define AB(n) ft_printf("**** rbtree abort: %s\n", n); exit(-1);
 # define FAIL(n) ft_printf(""); AB(n)

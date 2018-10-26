@@ -6,45 +6,44 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/08 13:31:50 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/20 15:52:59 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 20:10:10 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "rbtree.h"
 
-t_node			*rb_find_edge(t_node *q, int *wasred)
+t_node			*rb_find_edge(t_node *q)
 {
 	t_node		*edgelord;
 
 	edgelord = q->children[0];
 	while (edgelord->children[1] != 0)
 		edgelord = edgelord->children[1];
-	*wasred = (q->children[0]->red == 1);
 	return (edgelord);
 }
 
 void			rb_remove(t_node *q)
 {
 	t_node		*save;
-	int			wasred;
+	int			red;
 
-	if (q->children[0] == (void*)(intmax_t)(wasred = 0) || q->children[1] == 0)
+	if (q->children[0] == 0 || q->children[1] == 0)
 	{
-		if (CHILD(q, CHILD(q, 0) == 0) != 0)
-			wasred = IS_RED(CHILD(q, CHILD(q, 0) == 0));
+		red = IS_RED(q) || IS_RED(CHILD(q, CHILD(q, 0) == 0));
 		save = rb_swallow(q);
 		if (!save && !g_root)
 			return ;
-		wasred = (save->red > 1);
+		if (save->red == 2)
+			red = 1;
 	}
 	else
 	{
-		save = rb_find_edge(q, &wasred);
+		save = rb_find_edge(q);
 		q->value = save->value;
+		red = IS_RED(save);
 		save = rb_swallow(save);
-		wasred = (save->red > 1);
 	}
-	((wasred == 0) ? rb_fix_rebalance(save, (save->children[0] != 0))
+	(!red ? rb_fix_rebalance(save, (save->children[0] != 0))
 		: (save->red = 0));
 }
 
@@ -52,27 +51,37 @@ void			rb_remove(t_node *q)
 ** These functions help rebalance the tree after node removals.
 ** It returns a positive integer when the tree no longer
 ** needs to be rebalanced.
+**
+** TODO: Try 2 line if with SETBLKRED at line 79.
 */
 
 int				rb_rebal(t_node **p, t_node **s, int dir)
 {
-	int			flag;
+	int				wasred;
 
-	flag = 1;
 	if ((*s)->red == 0 && CBOTHBLK((*s)))
 	{
-		(*s)->red = !(*s)->red;
+		(*s)->red = 1;
 		if ((*p)->red == 1)
 			return (((*p)->red = 0) ? 1 : 1);
-		return (0);
+		return ((*p)->parent == 0 ? 1 : 0);
 	}
 	if (!IS_RED((*s)->children[!dir]))
-		*s = rb_rotate(*s, !dir, 1);
-	*p = rb_rotate(*p, dir, 0);
+	{
+		(*s)->red = 1;
+		*s = rb_rotate(*s, !dir);
+		(*s)->red = 0;
+	}
+	wasred = IS_RED((*p));
+	*p = rb_rotate(*p, dir);
 	*s = ((*p)->children[!dir]);
-	if (CBOTHRED((*p)))
-		rb_invert((*p));
-	return ((*p)->red == 1 ? 1 : !((*s)->red = 0));
+	(*s)->red = 0;
+	if (wasred)
+	{
+		(*p)->red = 1;
+		(*p)->children[dir]->red = 0;
+	}
+	return (1);
 }
 
 void			rb_fix_rebalance(t_node *n, int dir)
@@ -88,13 +97,13 @@ void			rb_fix_rebalance(t_node *n, int dir)
 		s = p->children[!dir];
 		if (IS_RED(s))
 		{
-			rb_rotate(p, dir, 1);
-			s = p->children[!dir];
+			s = rb_rotate(p, dir);
+			SETBLKRED(s, p);
+			continue;
 		}
-		if (s)
-			if (rb_rebal(&p, &s, dir) == 1)
-				return ;
-		dir = (p->parent ? DIR(p) : dir);
+		if (rb_rebal(&p, &s, dir) == 1)
+			return ;
+		dir = DIR(p);
 		p = p->parent;
 	}
 }

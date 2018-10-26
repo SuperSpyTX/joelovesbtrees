@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/08 16:51:24 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/19 14:23:46 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 19:56:20 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,22 +47,22 @@ void			rb_fix_insert(t_node *n)
 	if (!n)
 		return ;
 	q = n;
-	while (q)
+	while (q && IS_RED(q->parent) && IS_RED(q))
 	{
 		p = q->parent;
-		g = (p ? p->parent : 0);
-		if (g && CBOTHRED(g))
+		g = p->parent;
+		if (IS_RED(CHILD(g, !DIR(p))))
 		{
 			rb_invert(g);
-			g = g->parent;
+			q = g;
+			continue ;
 		}
-		if (p && BOTHRED(q, p))
+		else
 		{
-			if ((GETCHILD(q) != GETCHILD(p)))
-				p = rb_rotate(p, !GETCHILD(q), 0);
-			rb_rotate((g ? g : p), !GETCHILD(p), 1);
+			if (DIR(q) != DIR(p))
+				rb_rotate(p, !DIR(q));
+			SETBLKRED(rb_rotate(g, !DIR(p)), g);
 			break ;
 		}
-		q = (g && g->red == 0 ? 0 : p);
 	}
 }

@@ -6,7 +6,7 @@
 /*   By: jkrause <jkrause@student.42.us.org>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/11 09:12:10 by jkrause           #+#    #+#             */
-/*   Updated: 2018/09/20 15:53:48 by jkrause          ###   ########.fr       */
+/*   Updated: 2018/10/25 20:08:18 by jkrause          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,9 +71,16 @@ t_node			*rb_search(t_node *root, int value)
 
 /*
 ** Another yet working solution.
+** This returns the node that was previously
+** the opposite direction of the node being
+** rotated.
+**
+** eg, 4 (parent)
+**      \
+**       2 (the node returned)
 */
 
-t_node			*rb_rotate(t_node *q, int dir, int setcolors)
+t_node			*rb_rotate(t_node *q, int dir)
 {
 	t_node		*p;
 	t_node		*odir;
@@ -88,11 +95,6 @@ t_node			*rb_rotate(t_node *q, int dir, int setcolors)
 		p->children[GETCHILD(q)] = odir;
 	odir->parent = p;
 	q->parent = odir;
-	if (setcolors)
-	{
-		q->red = 1;
-		q->parent->red = 0;
-	}
 	if (p == 0)
 	{
 		g_root = odir;
@@ -114,22 +116,20 @@ t_node			*rb_swallow(t_node *n)
 		(g_root == n ? g_root = 0 : (void)0);
 		if (n->parent)
 			n->parent->children[GETCHILD(n)] = 0;
-		(n->red == 1 ? n->parent->red = 2 : (void)0);
+		(n->parent && IS_RED(n) ? n->parent->red = 2 : 0);
 		((child = n->parent) ? free(n) : free(n));
 		return (child);
 	}
 	child = n->children[CHILD(n, 0) == 0];
 	if (n->parent)
-	{
-		(child->red == 1 ? child->red = 2 : (void)0);
 		n->parent->children[GETCHILD(n)] = child;
-	}
 	child->parent = n->parent;
 	if (!child->parent)
 	{
 		g_root = child;
 		g_root->red = 0;
 	}
+	(child && IS_RED(n) ? child->red = 2 : 0);
 	free(n);
 	return (child);
 }
